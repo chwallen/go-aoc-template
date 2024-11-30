@@ -1,0 +1,10 @@
+advent-of-code
+input.txt
+description.md
+/cmd/run/day_parts.go
+
+.DS_Store
+*~
+.*.swp
+.idea/
+.vscode/
