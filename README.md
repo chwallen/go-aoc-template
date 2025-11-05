@@ -14,6 +14,9 @@ Things that are shared between days are placed inside the _internal_ directory.
 
 ## Instructions
 
+Start by replacing all occurrences of _chwallen/advent-of-code_ with your own
+module name.
+
 The Makefile includes commands to scaffold a day. Each command requires the
 variable `AOC_COOKIE` to be set either as an environment variable (recommended)
 or passed when running a command. The `YEAR` and `DAY` variables are optional
