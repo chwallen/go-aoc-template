@@ -6,10 +6,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/chwallen/advent-of-code/internal"
@@ -31,59 +29,46 @@ type TemplateData struct {
 func main() {
 	rootFolder := util.GetModuleRootPath()
 
+	yearDirPaths, e := filepath.Glob(filepath.Join(rootFolder, "20[1-9][0-9]"))
+	if e != nil {
+		log.Fatalf("Failed to glob year directories in %s: %v", rootFolder, e)
+	}
+
 	td := TemplateData{RootFolder: rootFolder}
 	latestEdit := time.Time{}
-	baseDepth := strings.Count(rootFolder, string(filepath.Separator))
-	yearRegex := regexp.MustCompile(`^20\d{2}$`)
-	filepath.WalkDir(rootFolder, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
 
-		pathParts := strings.Split(path, string(filepath.Separator))
-		if path == rootFolder || len(pathParts) == baseDepth+2 {
-			return nil
-		}
+	for _, yearDirPath := range yearDirPaths {
+		year, _ := strconv.Atoi(yearDirPath[len(yearDirPath)-4:])
 
-		yearDirectory := pathParts[baseDepth+1]
-		if len(pathParts) == baseDepth+3 {
-			if yearRegex.MatchString(yearDirectory) {
-				return nil
+		dayDirPaths, _ := filepath.Glob(filepath.Join(yearDirPath, "day[0-2][0-9]"))
+		for _, dayDirPath := range dayDirPaths {
+			dayDir := dayDirPath[len(dayDirPath)-5:]
+			dayFilePath := filepath.Join(dayDirPath, fmt.Sprintf("%s.go", dayDir))
+			dayFileInfo, err := os.Stat(dayDirPath)
+			if err != nil {
+				log.Printf("Could not stat file %s, ignoring %d/%s", dayFilePath, year, dayDir)
+				continue
 			}
-			return filepath.SkipDir
-		}
 
-		dayDirectory := pathParts[baseDepth+2]
-		if !strings.HasPrefix(dayDirectory, "day") || len(pathParts) == baseDepth+5 {
-			return filepath.SkipDir
-		}
-		if entry.Name() != fmt.Sprintf("%s.go", dayDirectory) {
-			return nil
-		}
+			dayNumber, _ := strconv.Atoi(dayDir[3:])
+			day := Day{
+				Year:  year,
+				Day:   dayNumber,
+				Parts: []int{1},
+			}
+			if dayNumber < 25 {
+				day.Parts = append(day.Parts, 2)
+			}
 
-		year, _ := strconv.Atoi(yearDirectory)
-		dayNumber, _ := strconv.Atoi(dayDirectory[3:])
-		day := Day{
-			Year:  year,
-			Day:   dayNumber,
-			Parts: []int{1},
-		}
-		if dayNumber < 25 {
-			day.Parts = append(day.Parts, 2)
-		}
+			td.Days = append(td.Days, day)
 
-		td.Days = append(td.Days, day)
-
-		t, err := getModTime(entry)
-		if err != nil {
-			log.Printf("Failed to get latest modification time for %s: %v\n", path, err)
-		} else if t.After(latestEdit) {
-			latestEdit = t
-			td.CurrentDay = day
+			modTime := dayFileInfo.ModTime()
+			if modTime.After(latestEdit) {
+				latestEdit = modTime
+				td.CurrentDay = day
+			}
 		}
-
-		return nil
-	})
+	}
 
 	slices.SortFunc(td.Days, func(a, b Day) int {
 		if a.Year-b.Year == 0 {
@@ -104,13 +89,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to execute template %s: %v", templateName, err)
 	}
-}
-
-func getModTime(de os.DirEntry) (time.Time, error) {
-	fi, err := de.Info()
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return fi.ModTime(), nil
 }
