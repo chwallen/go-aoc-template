@@ -44,7 +44,7 @@ func main() {
 		for _, dayDirPath := range dayDirPaths {
 			dayDir := dayDirPath[len(dayDirPath)-5:]
 			dayFilePath := filepath.Join(dayDirPath, fmt.Sprintf("%s.go", dayDir))
-			dayFileInfo, err := os.Stat(dayDirPath)
+			dayFileInfo, err := os.Stat(dayFilePath)
 			if err != nil {
 				log.Printf("Could not stat file %s, ignoring %d/%s", dayFilePath, year, dayDir)
 				continue
