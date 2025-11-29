@@ -54,10 +54,10 @@ func main() {
 			day := Day{
 				Year:  year,
 				Day:   dayNumber,
-				Parts: []int{1},
+				Parts: []int{1, 2},
 			}
-			if dayNumber < 25 {
-				day.Parts = append(day.Parts, 2)
+			if (year <= 2024 && dayNumber == 25) || (year >= 2025 && dayNumber == 12) {
+				day.Parts = day.Parts[:1]
 			}
 
 			td.Days = append(td.Days, day)
